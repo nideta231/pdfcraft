@@ -138,7 +138,10 @@ impl PdfCraftApp {
             return Err(e);
         }
         let (w, h) = (out.width, out.height);
-        #[cfg(not(target_arch = "wasm32"))]
+        // Not built for Android: `arboard` has no backend there. The snapshot itself is still
+        // taken (`last_snapshot`), which is what the Copy/Export paths in this window use; only
+        // the system-wide clipboard is out of reach, as it is on the web.
+        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
         if self.system_clipboard {
             let img = arboard::ImageData { width: w as usize, height: h as usize, bytes: std::borrow::Cow::Borrowed(&out.rgba) };
             arboard::Clipboard::new().and_then(|mut c| c.set_image(img)).map_err(|e| e.to_string())?;

@@ -19,14 +19,21 @@ pdfcraft-model = { workspace = true }
 pdfcraft-platform = { workspace = true }
 egui = { workspace = true, features = ["bytemuck"] }
 egui_extras = { workspace = true }
-eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "persistence", "links"] }
+# eframe is declared twice on purpose: `accesskit` and `android-native-activity` are mutually
+# exclusive in eframe (`compile_error!("\`accesskit\` feature is only available with
+# \`android-game-activity\`")`), and the Android shell has to enable the NativeActivity backend.
+# Cargo applies features only from target tables whose cfg matches, so the desktop keeps accesskit
+# and Android drops it. The shell cannot do this from its own manifest: features are a union over
+# the whole graph, so accesskit has to be gone from *this* crate for the pair never to meet.
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "persistence", "links"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 # Hands rendered rasters to egui as its pixels, without copying; already in the tree through egui and wgpu.
 bytemuck = { version = "1", features = ["extern_crate_alloc"] }
 
-rfd = { workspace = true }
+# rfd is the desktop's file dialogs; see the target tables below — on Android the same calls are
+# answered by `crate::rfd` instead, which the host implements (src/rfd.rs).
 png = "0.18"
 base64 = "0.22"
 # Right-to-left file names in the chrome (egui shapes but does not reorder); already in the tree.
@@ -35,9 +42,8 @@ unicode-bidi = "0.3"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Control-channel tokens.
 getrandom = "0.4"
-# Create ▸ Clipboard (images; already in the tree through egui-winit).
-arboard = { version = "3.6", default-features = false, features = ["image-data"] }
-# Waits for native file pickers off the UI thread (already in the tree through wgpu).
+# Waits for native file pickers off the UI thread (already in the tree through wgpu). The Android
+# picker blocks a worker on a channel, so it is still needed there.
 pollster = "1.0"
 # Checks that an installed fallback font parses and has the glyphs; the same skrifa egui uses.
 skrifa = "0.44"
@@ -51,6 +57,20 @@ objc2-foundation = { version = "0.3", default-features = false, features = ["std
 # A plain fsync where a volume refuses the full flush `sync_all` asks for (SMB, FUSE); already in
 # the tree through pdfcraft-cli.
 rustix = { version = "1", features = ["fs"] }
+
+# The desktop file dialogs and the OS clipboard have no Android backend: `rfd`'s backend.rs
+# compiles no module for a target that is neither Linux/BSD, macOS, Windows nor wasm32, and
+# `arboard` fails with `cannot find Set in module platform`. Neither crate is built there — the
+# same calls are answered by `crate::rfd` (src/rfd.rs) and by the clipboard fallbacks the browser
+# build already uses. Declared together, and mutually exclusive with the wasm32 table below, so
+# no dependency is named twice for any one target.
+[target.'cfg(all(not(target_os = "android"), not(target_arch = "wasm32")))'.dependencies]
+rfd = { workspace = true }
+# Create ▸ Clipboard (images; already in the tree through egui-winit).
+arboard = { version = "3.6", default-features = false, features = ["image-data"] }
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "persistence", "links"] }
 
 [target.'cfg(windows)'.dependencies]
 # Auto interface language: the Windows display language, without starting a process.

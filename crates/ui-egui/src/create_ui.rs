@@ -57,7 +57,11 @@ pub enum Clip {
 }
 
 /// An image on the system clipboard, or else its text.
-#[cfg(not(target_arch = "wasm32"))]
+///
+/// Not built for Android: `arboard` has no backend there (`cannot find Set in module platform`),
+/// so the clipboard is read where it is on the web — as nothing, which the caller already says
+/// out loud ("The clipboard has no image or text").
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
 fn read_clipboard() -> Option<Clip> {
     let mut cb = arboard::Clipboard::new().ok()?;
     if let Ok(img) = cb.get_image() {
@@ -111,9 +115,9 @@ impl PdfCraftApp {
     /// Create ▸ Clipboard: a new document from the image (one page, its size) or the text on
     /// the clipboard, as Acrobat does.
     pub(crate) fn create_from_clipboard(&mut self) {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
         let clip = read_clipboard();
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(any(target_arch = "wasm32", target_os = "android"))]
         let clip: Option<Clip> = None;
         match clip {
             Some(c) => {
@@ -149,7 +153,7 @@ impl PdfCraftApp {
     pub(crate) fn create_from_images_dialog(&mut self) {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let dialog = rfd::AsyncFileDialog::new()
+            let dialog = crate::rfd::AsyncFileDialog::new()
                 .add_filter(tl!("Images"), &["png", "jpg", "jpeg", "tif", "tiff", "gif", "bmp", "jp2", "j2k", "jpx"])
                 .set_title(tl!("Choose images"));
             self.ask(crate::pickers::Ask::Files(dialog), None, |app, files| {
@@ -279,7 +283,7 @@ impl PdfCraftApp {
             match self.save_override.clone() {
                 Some(p) => write(self, p),
                 None => {
-                    let dialog = rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).set_file_name(&name);
+                    let dialog = crate::rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).set_file_name(&name);
                     self.ask_one(crate::pickers::Ask::Save(dialog), None, move |app, p| write(app, p.to_string_lossy().into_owned()));
                 }
             }

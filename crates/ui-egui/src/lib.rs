@@ -91,6 +91,7 @@ mod palette;
 mod panels;
 #[cfg(not(target_arch = "wasm32"))]
 mod pickers;
+pub mod rfd;
 pub mod prepare;
 mod print_ui;
 mod signature_drag;
@@ -1458,7 +1459,7 @@ impl PdfCraftApp {
             (Ok(bytes), false) => {
                 #[cfg(not(target_arch = "wasm32"))]
                 self.ask_one(
-                    pickers::Ask::Save(rfd::AsyncFileDialog::new().set_file_name(crate::files::attachment_file_name(&att.name))),
+                    pickers::Ask::Save(crate::rfd::AsyncFileDialog::new().set_file_name(crate::files::attachment_file_name(&att.name))),
                     None,
                     move |app, path| match crate::editing::write_atomically(&path.to_string_lossy(), &bytes) {
                         Ok(()) => app.notify_fmt("Saved {name}", &[("name", &path.display().to_string())]),
@@ -1741,8 +1742,8 @@ impl PdfCraftApp {
 
     /// The File ▸ Open picker: PDFs, and images and text that become PDFs.
     #[cfg(not(target_arch = "wasm32"))]
-    fn open_picker() -> rfd::AsyncFileDialog {
-        rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).add_filter(tl!("Images and text (converted to PDF)"), &create_ui::CONVERTIBLE)
+    fn open_picker() -> crate::rfd::AsyncFileDialog {
+        crate::rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).add_filter(tl!("Images and text (converted to PDF)"), &create_ui::CONVERTIBLE)
     }
 
     pub fn open_dialog(&mut self) {
@@ -1750,7 +1751,7 @@ impl PdfCraftApp {
         #[cfg(not(target_arch = "wasm32"))]
         self.pick(
             pickers::PickFor::Open,
-            rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).add_filter(tl!("Images and text (converted to PDF)"), &create_ui::CONVERTIBLE),
+            crate::rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).add_filter(tl!("Images and text (converted to PDF)"), &create_ui::CONVERTIBLE),
             true,
         );
         // Browsers pick files asynchronously; the bytes arrive through `inbox`.
@@ -1759,7 +1760,7 @@ impl PdfCraftApp {
             let inbox = self.inbox.clone();
             let ctx = self.ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                if let Some(h) = rfd::AsyncFileDialog::new()
+                if let Some(h) = crate::rfd::AsyncFileDialog::new()
                     .add_filter("PDF", &["pdf"])
                     .add_filter(tl!("Images and text"), &create_ui::CONVERTIBLE)
                     .pick_file()

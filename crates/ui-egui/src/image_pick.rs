@@ -192,7 +192,7 @@ impl PdfCraftApp {
 
     /// Writes `bytes` to PdfCraft's private clipboard folder ([`clipboard_dir`]), replacing the
     /// previous copy, and puts that file on the system clipboard.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
     fn put_file_on_clipboard(&self, name: &str, bytes: &[u8]) -> Result<(), String> {
         if !self.system_clipboard {
             return Ok(());
@@ -200,6 +200,14 @@ impl PdfCraftApp {
         let dir = clipboard_dir().ok_or("there is no folder for the copied file")?;
         let path = write_clipboard_file(&dir, name, bytes)?;
         arboard::Clipboard::new().and_then(|mut c| c.set().file_list(&[path])).map_err(|e| e.to_string())
+    }
+
+    #[cfg(target_os = "android")]
+    fn put_file_on_clipboard(&self, _name: &str, _bytes: &[u8]) -> Result<(), String> {
+        if self.system_clipboard {
+            return Err("Android can't put files on the clipboard yet; use Save Image As".to_string());
+        }
+        Ok(())
     }
 
     #[cfg(target_arch = "wasm32")]

@@ -98,6 +98,7 @@ debug = "line-tables-only"
 incremental = false
 
 [profile.release]
+strip = true
 lto = "thin"
 codegen-units = 1
 
@@ -110,3 +111,11 @@ hayro-jbig2 = { path = "vendor/hayro-jbig2" }
 lopdf = { path = "vendor/lopdf" }
 winit = { path = "vendor/winit" }
 egui-wgpu = { path = "vendor/egui-wgpu" }
+
+# Android release: size-optimized (APK download size matters on phones/tablets).
+[profile.android]
+inherits = "release"
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+strip = true

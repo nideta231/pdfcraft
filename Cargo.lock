@@ -3908,6 +3908,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pdfcraft-android"
+version = "0.8.0"
+dependencies = [
+ "eframe",
+ "egui",
+ "log",
+ "pdfcraft-ui-egui",
+ "winit",
+]
+
+[[package]]
 name = "pdfcraft-annot"
 version = "0.8.0"
 dependencies = [
