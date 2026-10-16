@@ -3913,8 +3913,10 @@ version = "0.8.0"
 dependencies = [
  "eframe",
  "egui",
+ "jni",
  "log",
  "pdfcraft-ui-egui",
+ "serde_json",
  "winit",
 ]
 

@@ -21,6 +21,9 @@ crate-type = ["cdylib"]
 pdfcraft-ui-egui = { workspace = true }
 egui = { workspace = true }
 log = { workspace = true }
+# The update check (src/update_check.rs): JNI to HttpURLConnection, and the release JSON.
+jni = "0.22"
+serde_json = { workspace = true }
 
 # `android-native-activity` is the whole reason this builds: without a backend feature,
 # `android-activity` is pulled with no backend and eframe fails with `file not found for module
@@ -89,6 +92,10 @@ version = 1
 # hand in Settings ▸ Apps ▸ PdfCraft ▸ Special access. Play restricts it to file-manager-class
 # apps, which does not apply to a sideloaded build. Export needs it too, to write outside the app's
 # own folder.
+# The update check asks api.github.com for the latest release (src/update_check.rs).
+[[package.metadata.android.uses_permission]]
+name = "android.permission.INTERNET"
+
 [[package.metadata.android.uses_permission]]
 name = "android.permission.MANAGE_EXTERNAL_STORAGE"
 
